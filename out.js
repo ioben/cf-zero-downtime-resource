@@ -27,6 +27,27 @@ function validateManifest(manifest) {
   }
 }
 
+/*
+ * Perform variable substitutions on string `value`. Variables like `((param))`
+ * will be replaced with values found in `vars` map, or in any files listed in
+ * `vars_files`.
+ */
+function applySubstitutions(value, vars, vars_files) {
+  let variables = { ...vars }
+  vars_files.forEach(function (f) {
+    const file_value = yaml.safeLoad(fs.readFileSync(f, "utf8"))
+    variables = { ...variables, ...file_value }
+  })
+
+  let substituted_value = value;
+
+  Object.keys(variables).forEach(k => {
+    substituted_value = substituted_value.replace("((" + k + "))", variables[k])
+  });
+
+  return substituted_value
+}
+
 function validatePath(path) {
   const paths = glob.sync(path)
   if (paths.length === 0) {
@@ -92,9 +113,10 @@ async function cmd() {
 
     fs.writeFileSync("manifest.yml", yaml.safeDump(manifest))
 
+    const vars = request.params.vars || {}
     const vars_files = request.params.vars_files || []
 
-    const app_name = manifest.applications[0].name
+    const app_name = applySubstitutions(manifest.applications[0].name, vars, vars_files)
     const venerable = `${app_name}-venerable`
 
     if (request.params.vars) {
