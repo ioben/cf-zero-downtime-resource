@@ -65,8 +65,6 @@ async function cmd() {
 
     const request = await getStdin().then(JSON.parse)
 
-    const venerable = `${request.params.name}-venerable`
-
     let manifest =
       typeof request.params.manifest === "string"
         ? yaml.safeLoad(fs.readFileSync(request.params.manifest, "utf8"))
@@ -92,6 +90,10 @@ async function cmd() {
     fs.writeFileSync("manifest.yml", yaml.safeDump(manifest))
 
     const vars_files = request.params.vars_files || []
+
+    const app_name = request.params.name
+    const venerable = `${app_name}-venerable`
+
     if (request.params.vars) {
       fs.writeFileSync("vars.yml", yaml.safeDump(request.params.vars))
       vars_files.push("vars.yml")
@@ -101,11 +103,11 @@ async function cmd() {
     cf.target(request.source)
 
     cf.delete({ name: venerable })
-    cf.rename({ from: request.params.name, to: venerable, failOnError: false })
+    cf.rename({ from: app_name, to: venerable, failOnError: false })
     try {
       if (request.params.services) {
         cf.push({
-          name: request.params.name,
+          name: app_name,
           path: path,
           manifest: "manifest.yml",
           vars_files: vars_files,
@@ -113,13 +115,13 @@ async function cmd() {
           noStart: true
         })
         cf.bindServices({
-          name: request.params.name,
+          name: app_name,
           services: request.params.services
         })
-        cf.start({ name: request.params.name })
+        cf.start({ name: app_name })
       } else {
         cf.push({
-          name: request.params.name,
+          name: app_name,
           path: path,
           manifest: "manifest.yml",
           vars_files: vars_files,
@@ -129,13 +131,13 @@ async function cmd() {
       cf.stop({ name: venerable })
     } catch (e) {
       console.error("Unable to push application to CF. Reverting...", e)
-      console.log(`Recent logs for ${request.params.name}`)
-      console.log(cf.log({ name: request.params.name }))
-      const failed = `${request.params.name}-failed`
-      cf.stop({ name: request.params.name })
+      console.log(`Recent logs for ${app_name}`)
+      console.log(cf.log({ name: app_name }))
+      const failed = `${app_name}-failed`
+      cf.stop({ name: app_name })
       cf.delete({ name: failed })
-      cf.rename({ from: request.params.name, to: failed })
-      cf.rename({ from: venerable, to: request.params.name })
+      cf.rename({ from: app_name, to: failed })
+      cf.rename({ from: venerable, to: app_name })
       console.log("Revert successful!")
       process.exit(1)
     } finally {
@@ -144,7 +146,7 @@ async function cmd() {
       }
     }
 
-    const appInfo = cf.appInfo(request.params)
+    const appInfo = cf.appInfo({ name: app_name, guid: request.params.guid })
     concourse.response({
       version: appInfo.metadata,
       metadata: [
