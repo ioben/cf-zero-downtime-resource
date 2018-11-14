@@ -46,12 +46,15 @@ function validatePath(path) {
 function editManifest({ manifest, name, env = {}, docker_username }) {
   const application = {
     ...manifest.applications[0],
-    name,
     env: { ...manifest.applications[0].env, ...env }
   }
-  if (docker_username) {
+
+  if (typeof name !== "undefined")
+    application.name = name;
+
+  if (docker_username)
     application.docker = { ...application.docker, username: docker_username }
-  }
+
   return {
     ...manifest,
     applications: [application]
@@ -91,7 +94,7 @@ async function cmd() {
 
     const vars_files = request.params.vars_files || []
 
-    const app_name = request.params.name
+    const app_name = manifest.applications[0].name
     const venerable = `${app_name}-venerable`
 
     if (request.params.vars) {
