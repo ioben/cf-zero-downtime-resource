@@ -1,5 +1,6 @@
 applications:
   - name: cf-zero-downtime-test
+    timeout: 5
     buildpack: staticfile_buildpack
     env:
       FORCE_HTTPS: true

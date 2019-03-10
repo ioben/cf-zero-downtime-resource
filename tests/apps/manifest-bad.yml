@@ -1,6 +1,7 @@
 applications:
   - name: cf-zero-downtime-test
+    timeout: 5
     buildpack: nodejs_buildpack
     memory: 64M
     health-check-type: http
-    health-check-http-endpoint: /good
+    health-check-http-endpoint: /bad
