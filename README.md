@@ -132,3 +132,41 @@ jobs:
           health-check-type: http
           health-check-http-endpoint: /good
 ```
+
+## Testing
+
+Prerequisites:
+
+- CloudFoundry
+
+  The following environment variables must be set for testing
+
+  ```
+  export CF_API=""
+  export CF_USERNAME=""
+  export CF_PASSWORD=""
+  export CF_ORG=""
+  export CF_SPACE=""
+  ```
+
+  **Note:** Some tests will deploy apps to the configured CloudFoundry
+  Foundation/Org/Space. These apps should be cleaned up when the tests finish.
+
+  **WARNING:** Your CF CLI will be reconfigured to connect to the CF
+  Foundation/Org/Space using the username/password listed above. Make sure to
+  change your CF CLI's target back after running these tests. Changing the
+  target during the tests will cause them to fail!
+
+- Docker
+
+  Some tests will build the Docker image, and tests will be run against it.
+
+- Have [`jq`](https://stedolan.github.io/jq) installed
+
+- Have [`bats`](https://github.com/sstephenson/bats) installed
+
+To run all tests:
+
+```
+bats tests/*.bats
+```
